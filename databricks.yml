@@ -1,0 +1,35 @@
+bundle:
+  name: erp_lakehouse_migration
+
+resources:
+  jobs:
+    erp_pipeline:
+      name: "ERP Lakehouse Pipeline"
+      tasks:
+        - task_key: bronze_ingest
+          notebook_task:
+            notebook_path: ./notebooks/01_bronze_ingest.ipynb
+        - task_key: silver_transform
+          depends_on:
+            - task_key: bronze_ingest
+          notebook_task:
+            notebook_path: ./notebooks/03_silver_transform.ipynb
+        - task_key: gold_aggregate
+          depends_on:
+            - task_key: silver_transform
+          notebook_task:
+            notebook_path: ./notebooks/04_gold_aggregate.ipynb
+      job_clusters:
+        - job_cluster_key: default_cluster
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 0
+            data_security_mode: "SINGLE_USER"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-3fbf5da2-7e9d.cloud.databricks.com
